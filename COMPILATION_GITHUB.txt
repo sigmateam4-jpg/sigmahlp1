@@ -1,0 +1,1 @@
+Téléverser le contenu du dossier CalculatricePlus dans un dépôt GitHub (incluant .github/workflows). Ouvrir Actions > Compiler APK Android > Run workflow. Après succès, télécharger CalculatricePlus-V1.3-APK dans Artifacts. Compilation non encore exécutée.
