@@ -4,7 +4,8 @@ name: Compiler APK Android
 on:
   workflow_dispatch:
   push:
-    branches: [main]
+    branches:
+      - main
 
 jobs:
   build:
@@ -20,15 +21,10 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-          - name: Installer Android SDK
+      - name: Installer Android SDK
         uses: android-actions/setup-android@v3
         with:
-          accept-android-sdk-licenses: true
           packages: 'platform-tools'
-
-      - name: Verifier les licences Android
-        run: |
-          yes | sdkmanager --licenses || true
 
       - name: Installer Gradle
         uses: gradle/actions/setup-gradle@v4
