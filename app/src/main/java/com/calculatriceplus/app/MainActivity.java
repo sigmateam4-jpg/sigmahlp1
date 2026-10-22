@@ -12,7 +12,7 @@ import android.widget.*;
 import java.util.List;
 
 public class MainActivity extends Activity {
-  private final CalculatorEngine engine = new CalculatorEngine();
+  private CalculatorEngine engine = new CalculatorEngine();
   private LinearLayout root;
   private TextView display, pending, memoryIndicator, historyPreview;
   private boolean dark;
@@ -47,7 +47,17 @@ public class MainActivity extends Activity {
   @Override public void onCreate(Bundle saved) {
     super.onCreate(saved);
     dark = getPreferences(0).getBoolean("dark", false);
+    if (saved != null) {
+      Object restored = saved.getSerializable("calculator_state");
+      if (restored instanceof CalculatorEngine) engine = (CalculatorEngine) restored;
+      showRecentCalculation = saved.getBoolean("recent_calculation", false);
+    }
     build();
+  }
+  @Override protected void onSaveInstanceState(Bundle out) {
+    out.putSerializable("calculator_state", engine);
+    out.putBoolean("recent_calculation", showRecentCalculation);
+    super.onSaveInstanceState(out);
   }
   private void render() {
     display.setText(engine.getDisplay());
@@ -59,12 +69,22 @@ public class MainActivity extends Activity {
   private String compactHistory(String line) {
     int equals = line.lastIndexOf(" = ");
     if (equals < 0) return line;
-    String result = line.substring(equals + 3).replace(" ", "").replace("−", "-");
+    String original = line.substring(equals + 3);
     try {
-      java.math.BigDecimal number = new java.math.BigDecimal(result.replace(',', '.'));
-      String shortResult = number.round(new java.math.MathContext(10, java.math.RoundingMode.HALF_UP))
-        .stripTrailingZeros().toPlainString().replace('.', ',');
-      return line.substring(0, equals + 3) + (shortResult.equals(result.replace('-', '−')) ? shortResult : "≈ " + shortResult);
+      java.math.BigDecimal value = new java.math.BigDecimal(
+        original.replace(" ", "").replace("−", "-").replace(',', '.'));
+      java.math.BigDecimal rounded = value.round(
+        new java.math.MathContext(10, java.math.RoundingMode.HALF_UP)).stripTrailingZeros();
+      String shortResult = rounded.toPlainString().replace('.', ',').replace("-", "−");
+      if (shortResult.length() > 17) {
+        int exponent = rounded.precision() - rounded.scale() - 1;
+        String digits = rounded.unscaledValue().abs().toString();
+        shortResult = (rounded.signum() < 0 ? "−" : "") + digits.charAt(0)
+          + (digits.length() > 1 ? "," + digits.substring(1) : "")
+          + "E" + (exponent >= 0 ? "+" : "−") + Math.abs(exponent);
+      }
+      return line.substring(0, equals + 3)
+        + (value.compareTo(rounded) == 0 ? "" : "≈ ") + shortResult;
     } catch (NumberFormatException ex) { return line; }
   }
   private void press(String key) {
