@@ -2,47 +2,177 @@ package com.calculatriceplus.app;
 
 import android.app.*;
 import android.os.Bundle;
-import android.content.*;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
+import android.content.res.ColorStateList;
+import android.util.TypedValue;
 import android.view.*;
 import android.widget.*;
-import java.math.*;
-import java.text.*;
-import java.util.*;
+import java.util.List;
 
 public class MainActivity extends Activity {
-  LinearLayout root, screen; TextView display, history, memoryIndicator;
-  final CalculatorEngine engine = new CalculatorEngine();
-  boolean dark=false;
-  int rgb(String c){return Color.parseColor(c);}
-  GradientDrawable bg(int top,int bottom,int radius){GradientDrawable d=new GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM,new int[]{top,bottom});d.setCornerRadius(radius);d.setStroke(2,dark?rgb("#171a21"):rgb("#707987"));return d;}
-  @Override public void onCreate(Bundle b){super.onCreate(b);dark=getPreferences(0).getBoolean("dark",false);build();}
-  void render(){
+  private final CalculatorEngine engine = new CalculatorEngine();
+  private LinearLayout root;
+  private TextView display, pending, memoryIndicator, historyPreview;
+  private boolean dark;
+
+  private int color(String value) { return Color.parseColor(value); }
+  private int dp(float value) { return (int)(value * getResources().getDisplayMetrics().density + .5f); }
+  private int foreground() { return dark ? color("#F3F6FA") : color("#182530"); }
+  private int secondary() { return dark ? color("#AEBFCB") : color("#4D6474"); }
+  private GradientDrawable surface(int fill, int radius, int border) {
+    GradientDrawable drawable = new GradientDrawable();
+    drawable.setColor(fill);
+    drawable.setCornerRadius(dp(radius));
+    if (border != 0) drawable.setStroke(dp(1), border);
+    return drawable;
+  }
+  private TextView text(String label, float sp, int ink) {
+    TextView view = new TextView(this);
+    view.setText(label);
+    view.setTextColor(ink);
+    view.setTextSize(TypedValue.COMPLEX_UNIT_SP, sp);
+    view.setGravity(Gravity.CENTER);
+    view.setIncludeFontPadding(false);
+    return view;
+  }
+  private void accessible(TextView view, String description, View.OnClickListener listener) {
+    view.setContentDescription(description);
+    view.setClickable(true);
+    view.setFocusable(true);
+    view.setOnClickListener(listener);
+  }
+  @Override public void onCreate(Bundle saved) {
+    super.onCreate(saved);
+    dark = getPreferences(0).getBoolean("dark", false);
+    build();
+  }
+  private void render() {
     display.setText(engine.getDisplay());
-    if(memoryIndicator!=null) memoryIndicator.setText(engine.hasMemory() ? "M" : "");
-    StringBuilder s=new StringBuilder();
-    java.util.List<String> lines=engine.getHistory();
-    int from=Math.max(0,lines.size()-3);
-    for(int i=from;i<lines.size();i++)s.append(lines.get(i)).append('\n');
-    if(!engine.getPending().isEmpty())s.append(engine.getPending());
-    history.setText(s.toString().trim());
+    pending.setText(engine.getPending());
+    memoryIndicator.setText(engine.hasMemory() ? "M" : "");
+    List<String> lines = engine.getHistory();
+    historyPreview.setText(lines.isEmpty() ? "" : lines.get(lines.size()-1));
   }
-  void press(String k){engine.press(k);render();}
-  void showHistory(){
-    java.util.List<String> lines=engine.getHistory();
-    if(lines.isEmpty()){new AlertDialog.Builder(this).setTitle("Historique").setMessage("Aucun calcul pour cette session.").setPositiveButton("Fermer",null).show();return;}
-    StringBuilder all=new StringBuilder();for(String line:lines)all.append(line).append("\n\n");
-    new AlertDialog.Builder(this).setTitle("Historique de la session").setMessage(all.toString().trim())
-      .setNeutralButton("Effacer",(d,w)->{engine.clearHistory();render();})
-      .setPositiveButton("Fermer",null).show();
+  private void press(String key) { engine.press(key); render(); }
+  private void showHistory() {
+    List<String> lines = engine.getHistory();
+    if (lines.isEmpty()) {
+      new AlertDialog.Builder(this).setTitle("Historique")
+        .setMessage("Aucun calcul pour cette session.")
+        .setPositiveButton("Fermer", null).show();
+      return;
+    }
+    StringBuilder all = new StringBuilder();
+    for (String line : lines) all.append(line).append("\n\n");
+    ScrollView scroll = new ScrollView(this);
+    TextView content = text(all.toString().trim(), 17, foreground());
+    content.setGravity(Gravity.TOP | Gravity.RIGHT);
+    content.setPadding(dp(20), dp(18), dp(20), dp(18));
+    scroll.addView(content);
+    AlertDialog dialog = new AlertDialog.Builder(this).setTitle("Historique de la session")
+      .setView(scroll).setNeutralButton("Effacer", (d,w) ->
+        new AlertDialog.Builder(this).setTitle("Effacer l'historique ?")
+          .setMessage("Les calculs de cette session seront supprimés.")
+          .setNegativeButton("Annuler", null)
+          .setPositiveButton("Effacer", (confirm,which) -> { engine.clearHistory(); render(); }).show())
+      .setPositiveButton("Fermer", null).create();
+    dialog.show();
   }
-  TextView txt(String t,int size,int color){TextView v=new TextView(this);v.setText(t);v.setTextSize(size);v.setTextColor(color);v.setGravity(Gravity.CENTER);v.setTypeface(Typeface.DEFAULT,Typeface.NORMAL);return v;}
-  void build(){root=new LinearLayout(this);root.setOrientation(LinearLayout.VERTICAL);root.setPadding(12,8,12,12);root.setBackground(bg(dark?rgb("#17191d"):rgb("#e0e3e6"),dark?rgb("#0e1014"):rgb("#c3c8ce"),0));setContentView(root);
-   LinearLayout header=new LinearLayout(this);header.setGravity(Gravity.CENTER_VERTICAL);TextView name=txt("CALCULATRICE PLUS",15,dark?Color.WHITE:rgb("#252b32"));header.addView(name,new LinearLayout.LayoutParams(0,50,1));TextView menu=txt("⋮",28,dark?Color.WHITE:rgb("#252b32"));header.addView(menu,new LinearLayout.LayoutParams(48,50));menu.setOnClickListener(v->{PopupMenu pm=new PopupMenu(this,menu);pm.getMenu().add("Thème argenté");pm.getMenu().add("Thème sombre");pm.getMenu().add("Historique");pm.setOnMenuItemClickListener(item->{if(item.getTitle().toString().equals("Historique")){showHistory();return true;}dark=item.getTitle().toString().contains("sombre");getPreferences(0).edit().putBoolean("dark",dark).apply();build();return true;});pm.show();});root.addView(header);
-   screen=new LinearLayout(this);screen.setOrientation(LinearLayout.VERTICAL);screen.setPadding(12,8,12,8);screen.setBackground(bg(dark?rgb("#303840"):rgb("#a9d8e9"),dark?rgb("#151d24"):rgb("#81b9cf"),12));display=txt("0",40,dark?rgb("#e5f4ff"):rgb("#1d2730"));display.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL);display.setMaxLines(1);display.setAutoSizeTextTypeUniformWithConfiguration(14,40,1,android.util.TypedValue.COMPLEX_UNIT_SP);history=txt("",15,dark?rgb("#9eabb7"):rgb("#4b6570"));history.setGravity(Gravity.RIGHT|Gravity.TOP);history.setAutoSizeTextTypeUniformWithConfiguration(9,15,1,android.util.TypedValue.COMPLEX_UNIT_SP);memoryIndicator=txt("",13,dark?rgb("#b7c9d7"):rgb("#2d4d60"));memoryIndicator.setGravity(Gravity.LEFT|Gravity.CENTER_VERTICAL);screen.addView(memoryIndicator,new LinearLayout.LayoutParams(-1,22));screen.addView(history,new LinearLayout.LayoutParams(-1,0,1));screen.addView(display,new LinearLayout.LayoutParams(-1,0,2));root.addView(screen,new LinearLayout.LayoutParams(-1,0,2));
-   String[][] keys={{"mc","m+","m−","mr"},{"C","%","+/−","÷"},{"7","8","9","×"},{"4","5","6","−"},{"1","2","3","+"},{"0",",","⌫","="}};
-   for(String[] row:keys){LinearLayout bar=new LinearLayout(this);for(String k:row){boolean mem=k.startsWith("m");boolean num=k.matches("[0-9]")||k.equals(",")||k.equals("⌫");int top,bottom,fg;if(dark){top=mem?rgb("#353b46"):num?rgb("#30343b"):rgb("#485365");bottom=rgb("#171b22");fg=Color.WHITE;}else{top=mem?rgb("#a4b3cd"):num?rgb("#f4f2e8"):rgb("#e4e9f4");bottom=mem?rgb("#677a9a"):num?rgb("#b9bcb4"):rgb("#b3bfd3");fg=rgb("#15191d");}if(k.equals("C")){top=rgb("#ffb4ac");bottom=rgb("#ec6665");}if(k.equals("=")){top=rgb("#ffd28a");bottom=rgb("#ff8a25");}TextView b=txt(k,mem?20:29,fg);b.setBackground(bg(top,bottom,9));LinearLayout.LayoutParams p=new LinearLayout.LayoutParams(0,-1,1);p.setMargins(3,4,3,4);bar.addView(b,p);b.setOnClickListener(v->press(k));}root.addView(bar,new LinearLayout.LayoutParams(-1,0,1));}
-   render();}
+  private void showMenu(View anchor) {
+    PopupMenu popup = new PopupMenu(this, anchor);
+    popup.getMenu().add("Thème argenté");
+    popup.getMenu().add("Thème sombre");
+    popup.getMenu().add("Historique");
+    popup.setOnMenuItemClickListener(item -> {
+      String title = item.getTitle().toString();
+      if (title.equals("Historique")) { showHistory(); return true; }
+      dark = title.equals("Thème sombre");
+      getPreferences(0).edit().putBoolean("dark", dark).apply();
+      build();
+      return true;
+    });
+    popup.show();
+  }
+  private void build() {
+    root = new LinearLayout(this);
+    root.setOrientation(LinearLayout.VERTICAL);
+    root.setPadding(dp(10), dp(4), dp(10), dp(10));
+    root.setBackgroundColor(dark ? color("#151A20") : color("#D8DDE2"));
+    setContentView(root);
+
+    LinearLayout header = new LinearLayout(this);
+    header.setGravity(Gravity.CENTER_VERTICAL);
+    TextView title = text("CALCULATRICE PLUS", 15, foreground());
+    title.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
+    title.setGravity(Gravity.CENTER_VERTICAL | Gravity.LEFT);
+    title.setPadding(dp(10), 0, 0, 0);
+    header.addView(title, new LinearLayout.LayoutParams(0, dp(48), 1f));
+    TextView historyButton = text("◷", 27, secondary());
+    header.addView(historyButton, new LinearLayout.LayoutParams(dp(48), dp(48)));
+    accessible(historyButton, "Afficher l'historique", v -> showHistory());
+    TextView menu = text("⋮", 26, foreground());
+    header.addView(menu, new LinearLayout.LayoutParams(dp(48), dp(48)));
+    accessible(menu, "Ouvrir les options", v -> showMenu(menu));
+    root.addView(header);
+
+    LinearLayout screen = new LinearLayout(this);
+    screen.setOrientation(LinearLayout.VERTICAL);
+    screen.setPadding(dp(16), dp(10), dp(16), dp(10));
+    screen.setBackground(surface(dark ? color("#263641") : color("#A8CBDC"), 13,
+      dark ? color("#384C59") : color("#86AABA")));
+    LinearLayout topLine = new LinearLayout(this);
+    topLine.setGravity(Gravity.CENTER_VERTICAL);
+    memoryIndicator = text("", 13, secondary());
+    memoryIndicator.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
+    topLine.addView(memoryIndicator, new LinearLayout.LayoutParams(dp(32), dp(24)));
+    historyPreview = text("", 13, secondary());
+    historyPreview.setGravity(Gravity.RIGHT | Gravity.CENTER_VERTICAL);
+    historyPreview.setSingleLine(true);
+    historyPreview.setEllipsize(android.text.TextUtils.TruncateAt.START);
+    topLine.addView(historyPreview, new LinearLayout.LayoutParams(0, dp(24), 1f));
+    screen.addView(topLine);
+    pending = text("", 15, secondary());
+    pending.setGravity(Gravity.RIGHT | Gravity.CENTER_VERTICAL);
+    pending.setSingleLine(true);
+    screen.addView(pending, new LinearLayout.LayoutParams(-1, dp(28)));
+    display = text("0", 40, foreground());
+    display.setGravity(Gravity.RIGHT | Gravity.CENTER_VERTICAL);
+    display.setSingleLine(true);
+    display.setAutoSizeTextTypeUniformWithConfiguration(16, 40, 1, TypedValue.COMPLEX_UNIT_SP);
+    screen.addView(display, new LinearLayout.LayoutParams(-1, 0, 1f));
+    root.addView(screen, new LinearLayout.LayoutParams(-1, 0, 1.65f));
+
+    String[][] keys = {
+      {"mc","m+","m−","mr"},
+      {"C","%","+/−","÷"},
+      {"7","8","9","×"},
+      {"4","5","6","−"},
+      {"1","2","3","+"},
+      {"0",",","⌫","="}
+    };
+    for (String[] row : keys) {
+      LinearLayout bar = new LinearLayout(this);
+      bar.setOrientation(LinearLayout.HORIZONTAL);
+      for (String key : row) {
+        boolean mem = key.startsWith("m");
+        boolean number = key.matches("[0-9]") || key.equals(",") || key.equals("⌫");
+        int fill = dark ? (mem ? color("#354453") : number ? color("#292F38") : color("#3A5064"))
+          : (mem ? color("#B6C5D3") : number ? color("#F1F3F4") : color("#CBD7E1"));
+        int ink = foreground();
+        if (key.equals("C")) { fill = dark ? color("#AE5155") : color("#E98B8B"); ink = Color.WHITE; }
+        if (key.equals("=")) { fill = dark ? color("#D58B38") : color("#E79A3B"); ink = Color.WHITE; }
+        TextView button = text(key, mem ? 19 : 28, ink);
+        button.setTypeface(Typeface.DEFAULT, mem ? Typeface.NORMAL : Typeface.MEDIUM);
+        button.setBackground(surface(fill, 11, dark ? color("#414A55") : color("#B8C2CB")));
+        LinearLayout.LayoutParams cell = new LinearLayout.LayoutParams(0, -1, 1f);
+        cell.setMargins(dp(3), dp(4), dp(3), dp(4));
+        bar.addView(button, cell);
+        accessible(button, key.equals("⌫") ? "Effacer le dernier chiffre" : key, v -> press(key));
+      }
+      root.addView(bar, new LinearLayout.LayoutParams(-1, 0, 1f));
+    }
+    render();
+  }
 }
