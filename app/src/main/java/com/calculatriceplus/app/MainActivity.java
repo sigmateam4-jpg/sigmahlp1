@@ -48,7 +48,17 @@ public class MainActivity extends Activity {
   @Override public void onCreate(Bundle saved) {
     super.onCreate(saved);
     dark = getPreferences(0).getBoolean("dark", false);
+    if (saved != null) {
+      Object restored = saved.getSerializable("calculator_engine");
+      if (restored instanceof CalculatorEngine) engine = (CalculatorEngine) restored;
+      showRecentCalculation = saved.getBoolean("show_recent_calculation", false);
+    }
     build();
+  }
+  @Override protected void onSaveInstanceState(Bundle out) {
+    out.putSerializable("calculator_engine", engine);
+    out.putBoolean("show_recent_calculation", showRecentCalculation);
+    super.onSaveInstanceState(out);
   }
   private void render() {
     display.setText(engine.getDisplay());
