@@ -8,6 +8,7 @@ on:
       - main
       - develop/calculatrice-plus-v2
       - develop/calculatrice-plus-v2-2
+      - develop/calculatrice-plus-v2-3
 
 jobs:
   build:
@@ -32,6 +33,13 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.7'
+
+      - name: Tests Java du moteur
+        run: |
+          mkdir -p test-build
+          javac -encoding UTF-8 -d test-build app/src/main/java/com/calculatriceplus/app/CalculatorEngine.java tests/CalculatorEngineTest.java tests/CalculatorEngineV23Test.java
+          java -Dfile.encoding=UTF-8 -cp test-build CalculatorEngineTest
+          java -Dfile.encoding=UTF-8 -cp test-build CalculatorEngineV23Test
 
       - name: Compiler APK
         run: gradle assembleDebug --no-daemon
