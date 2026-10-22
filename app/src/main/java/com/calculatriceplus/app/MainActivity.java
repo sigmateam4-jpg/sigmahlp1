@@ -52,7 +52,7 @@ public class MainActivity extends Activity {
   }
   private void render() {
     display.setText(engine.getDisplay());
-    if (displayScroll != null) displayScroll.post(() -> displayScroll.fullScroll(View.FOCUS_RIGHT));
+    if (displayScroll != null) displayScroll.post(() -> displayScroll.scrollTo(display.getWidth(), 0));
     pending.setText(engine.getPending());
     memoryIndicator.setText(engine.hasMemory() ? "M" : "");
     List<String> lines = engine.getHistory();
@@ -173,7 +173,7 @@ public class MainActivity extends Activity {
     display = text("0", 40, foreground());
     display.setGravity(Gravity.RIGHT | Gravity.CENTER_VERTICAL);
     display.setSingleLine(true);
-    display.setHorizontallyScrolling(true);
+    display.setHorizontallyScrolling(false);
     display.setTextSize(TypedValue.COMPLEX_UNIT_SP, 40);
     displayScroll = new HorizontalScrollView(this);
     displayScroll.setHorizontalScrollBarEnabled(false);
