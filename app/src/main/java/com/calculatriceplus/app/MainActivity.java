@@ -164,7 +164,7 @@ public class MainActivity extends Activity {
         if (key.equals("C")) { fill = dark ? color("#AE5155") : color("#E98B8B"); ink = Color.WHITE; }
         if (key.equals("=")) { fill = dark ? color("#D58B38") : color("#E79A3B"); ink = Color.WHITE; }
         TextView button = text(key, mem ? 19 : 28, ink);
-        button.setTypeface(Typeface.DEFAULT, mem ? Typeface.NORMAL : Typeface.MEDIUM);
+        button.setTypeface(Typeface.DEFAULT, mem ? Typeface.NORMAL : Typeface.BOLD);
         button.setBackground(surface(fill, 11, dark ? color("#414A55") : color("#B8C2CB")));
         LinearLayout.LayoutParams cell = new LinearLayout.LayoutParams(0, -1, 1f);
         cell.setMargins(dp(3), dp(4), dp(3), dp(4));
