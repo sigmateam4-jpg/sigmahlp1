@@ -15,6 +15,7 @@ public class MainActivity extends Activity {
   private CalculatorEngine engine = new CalculatorEngine();
   private LinearLayout root;
   private TextView display, pending, memoryIndicator, historyPreview;
+  private HorizontalScrollView displayScroll;
   private boolean dark;
   private boolean showRecentCalculation = false;
 
@@ -47,20 +48,11 @@ public class MainActivity extends Activity {
   @Override public void onCreate(Bundle saved) {
     super.onCreate(saved);
     dark = getPreferences(0).getBoolean("dark", false);
-    if (saved != null) {
-      Object restored = saved.getSerializable("calculator_state");
-      if (restored instanceof CalculatorEngine) engine = (CalculatorEngine) restored;
-      showRecentCalculation = saved.getBoolean("recent_calculation", false);
-    }
     build();
-  }
-  @Override protected void onSaveInstanceState(Bundle out) {
-    out.putSerializable("calculator_state", engine);
-    out.putBoolean("recent_calculation", showRecentCalculation);
-    super.onSaveInstanceState(out);
   }
   private void render() {
     display.setText(engine.getDisplay());
+    if (displayScroll != null) displayScroll.post(() -> displayScroll.fullScroll(View.FOCUS_RIGHT));
     pending.setText(engine.getPending());
     memoryIndicator.setText(engine.hasMemory() ? "M" : "");
     List<String> lines = engine.getHistory();
@@ -181,8 +173,13 @@ public class MainActivity extends Activity {
     display = text("0", 40, foreground());
     display.setGravity(Gravity.RIGHT | Gravity.CENTER_VERTICAL);
     display.setSingleLine(true);
-    display.setAutoSizeTextTypeUniformWithConfiguration(16, 40, 1, TypedValue.COMPLEX_UNIT_SP);
-    screen.addView(display, new LinearLayout.LayoutParams(-1, 0, 1f));
+    display.setHorizontallyScrolling(true);
+    display.setTextSize(TypedValue.COMPLEX_UNIT_SP, 40);
+    displayScroll = new HorizontalScrollView(this);
+    displayScroll.setHorizontalScrollBarEnabled(false);
+    displayScroll.setFillViewport(true);
+    displayScroll.addView(display, new android.widget.FrameLayout.LayoutParams(-2, -1));
+    screen.addView(displayScroll, new LinearLayout.LayoutParams(-1, 0, 1f));
     root.addView(screen, new LinearLayout.LayoutParams(-1, 0, 1.28f));
 
     String[][] keys = {
