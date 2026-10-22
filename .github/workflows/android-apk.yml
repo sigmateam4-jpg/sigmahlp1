@@ -6,6 +6,7 @@ on:
   push:
     branches:
       - main
+      - develop/calculatrice-plus-v2
 
 jobs:
   build:
