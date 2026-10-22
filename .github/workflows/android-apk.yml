@@ -7,6 +7,7 @@ on:
     branches:
       - main
       - develop/calculatrice-plus-v2
+      - develop/calculatrice-plus-v2-2
 
 jobs:
   build:
