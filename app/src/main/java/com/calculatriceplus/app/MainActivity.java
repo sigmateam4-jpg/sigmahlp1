@@ -16,6 +16,7 @@ public class MainActivity extends Activity {
   private LinearLayout root;
   private TextView display, pending, memoryIndicator, historyPreview;
   private boolean dark;
+  private boolean showRecentCalculation = false;
 
   private int color(String value) { return Color.parseColor(value); }
   private int dp(float value) { return (int)(value * getResources().getDisplayMetrics().density + .5f); }
@@ -53,9 +54,25 @@ public class MainActivity extends Activity {
     pending.setText(engine.getPending());
     memoryIndicator.setText(engine.hasMemory() ? "M" : "");
     List<String> lines = engine.getHistory();
-    historyPreview.setText(lines.isEmpty() ? "" : lines.get(lines.size()-1));
+    historyPreview.setText(!showRecentCalculation || lines.isEmpty() ? "" : compactHistory(lines.get(lines.size()-1)));
   }
-  private void press(String key) { engine.press(key); render(); }
+  private String compactHistory(String line) {
+    int equals = line.lastIndexOf(" = ");
+    if (equals < 0) return line;
+    String result = line.substring(equals + 3).replace(" ", "").replace("−", "-");
+    try {
+      java.math.BigDecimal number = new java.math.BigDecimal(result.replace(',', '.'));
+      String shortResult = number.round(new java.math.MathContext(10, java.math.RoundingMode.HALF_UP))
+        .stripTrailingZeros().toPlainString().replace('.', ',');
+      return line.substring(0, equals + 3) + (shortResult.equals(result.replace('-', '−')) ? shortResult : "≈ " + shortResult);
+    } catch (NumberFormatException ex) { return line; }
+  }
+  private void press(String key) {
+    int before = engine.getHistory().size();
+    engine.press(key);
+    showRecentCalculation = engine.getHistory().size() > before;
+    render();
+  }
   private AlertDialog.Builder dialog() {
     return new AlertDialog.Builder(this, dark ? android.R.style.Theme_Material_Dialog_Alert : android.R.style.Theme_Material_Light_Dialog_Alert);
   }
@@ -68,7 +85,7 @@ public class MainActivity extends Activity {
       return;
     }
     StringBuilder all = new StringBuilder();
-    for (String line : lines) all.append(line).append("\n\n");
+    for (String line : lines) all.append(compactHistory(line)).append("\n\n");
     ScrollView scroll = new ScrollView(this);
     TextView content = text(all.toString().trim(), 17, foreground());
     content.setGravity(Gravity.TOP | Gravity.RIGHT);
@@ -79,7 +96,7 @@ public class MainActivity extends Activity {
         dialog().setTitle("Effacer l'historique ?")
           .setMessage("Les calculs de cette session seront supprimés.")
           .setNegativeButton("Annuler", null)
-          .setPositiveButton("Effacer", (confirm,which) -> { engine.clearHistory(); render(); }).show())
+          .setPositiveButton("Effacer", (confirm,which) -> { engine.clearHistory(); showRecentCalculation = false; render(); }).show())
       .setPositiveButton("Fermer", null).create();
     dialog.show();
   }
