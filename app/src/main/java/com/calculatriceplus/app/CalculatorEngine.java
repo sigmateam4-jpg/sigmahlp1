@@ -20,8 +20,23 @@ public final class CalculatorEngine {
   public String getDisplay() {
     if (error) return "Erreur";
     String plain = entry.replace("-", "");
-    if (plain.length() > 36) return format(parse(entry));
+    if (plain.length() > 15) return compact(parse(entry));
     return groupText(entry);
+  }
+  /** Résultat compact et lisible : ne modifie jamais la valeur interne BigDecimal. */
+  private static String compact(BigDecimal value) {
+    BigDecimal rounded = value.round(new MathContext(12, RoundingMode.HALF_UP)).stripTrailingZeros();
+    String plain = groupText(rounded.toPlainString().replace('.', ','));
+    if (plain.length() <= 17) return plain;
+    return scientificCompact(value);
+  }
+  private static String scientificCompact(BigDecimal value) {
+    BigDecimal rounded = value.round(new MathContext(10, RoundingMode.HALF_UP)).stripTrailingZeros();
+    String digits = rounded.unscaledValue().abs().toString();
+    int exponent = rounded.precision() - rounded.scale() - 1;
+    return (rounded.signum() < 0 ? "−" : "") + digits.charAt(0)
+      + (digits.length() > 1 ? "," + digits.substring(1) : "")
+      + "E" + (exponent >= 0 ? "+" : "−") + Math.abs(exponent);
   }
   public List<String> getHistory() { return Collections.unmodifiableList(history); }
   public String getPending() { return left == null || operator == null ? "" : format(left) + " " + operator; }
