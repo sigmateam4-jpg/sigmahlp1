@@ -56,7 +56,10 @@ public class MainActivity extends Activity {
     historyPreview.setText(lines.isEmpty() ? "" : lines.get(lines.size()-1));
   }
   private void press(String key) { engine.press(key); render(); }
-  private AlertDialog.Builder dialog() {\n    return new AlertDialog.Builder(this, dark ? android.R.style.Theme_Material_Dialog_Alert : android.R.style.Theme_Material_Light_Dialog_Alert);\n  }\n  private void showHistory() {
+  private AlertDialog.Builder dialog() {
+    return new AlertDialog.Builder(this, dark ? android.R.style.Theme_Material_Dialog_Alert : android.R.style.Theme_Material_Light_Dialog_Alert);
+  }
+  private void showHistory() {
     List<String> lines = engine.getHistory();
     if (lines.isEmpty()) {
       dialog().setTitle("Historique")
