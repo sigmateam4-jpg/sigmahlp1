@@ -56,10 +56,10 @@ public class MainActivity extends Activity {
     historyPreview.setText(lines.isEmpty() ? "" : lines.get(lines.size()-1));
   }
   private void press(String key) { engine.press(key); render(); }
-  private void showHistory() {
+  private AlertDialog.Builder dialog() {\n    return new AlertDialog.Builder(this, dark ? android.R.style.Theme_Material_Dialog_Alert : android.R.style.Theme_Material_Light_Dialog_Alert);\n  }\n  private void showHistory() {
     List<String> lines = engine.getHistory();
     if (lines.isEmpty()) {
-      new AlertDialog.Builder(this).setTitle("Historique")
+      dialog().setTitle("Historique")
         .setMessage("Aucun calcul pour cette session.")
         .setPositiveButton("Fermer", null).show();
       return;
@@ -71,9 +71,9 @@ public class MainActivity extends Activity {
     content.setGravity(Gravity.TOP | Gravity.RIGHT);
     content.setPadding(dp(20), dp(18), dp(20), dp(18));
     scroll.addView(content);
-    AlertDialog dialog = new AlertDialog.Builder(this).setTitle("Historique de la session")
+    AlertDialog dialog = dialog().setTitle("Historique de la session")
       .setView(scroll).setNeutralButton("Effacer", (d,w) ->
-        new AlertDialog.Builder(this).setTitle("Effacer l'historique ?")
+        dialog().setTitle("Effacer l'historique ?")
           .setMessage("Les calculs de cette session seront supprimés.")
           .setNegativeButton("Annuler", null)
           .setPositiveButton("Effacer", (confirm,which) -> { engine.clearHistory(); render(); }).show())
@@ -135,14 +135,14 @@ public class MainActivity extends Activity {
     screen.addView(topLine);
     pending = text("", 15, secondary());
     pending.setGravity(Gravity.RIGHT | Gravity.CENTER_VERTICAL);
-    pending.setSingleLine(true);
+    pending.setSingleLine(true);\n    pending.setEllipsize(android.text.TextUtils.TruncateAt.START);
     screen.addView(pending, new LinearLayout.LayoutParams(-1, dp(28)));
     display = text("0", 40, foreground());
     display.setGravity(Gravity.RIGHT | Gravity.CENTER_VERTICAL);
     display.setSingleLine(true);
     display.setAutoSizeTextTypeUniformWithConfiguration(16, 40, 1, TypedValue.COMPLEX_UNIT_SP);
     screen.addView(display, new LinearLayout.LayoutParams(-1, 0, 1f));
-    root.addView(screen, new LinearLayout.LayoutParams(-1, 0, 1.65f));
+    root.addView(screen, new LinearLayout.LayoutParams(-1, 0, 1.28f));
 
     String[][] keys = {
       {"mc","m+","m−","mr"},
@@ -171,7 +171,7 @@ public class MainActivity extends Activity {
         bar.addView(button, cell);
         accessible(button, key.equals("⌫") ? "Effacer le dernier chiffre" : key, v -> press(key));
       }
-      root.addView(bar, new LinearLayout.LayoutParams(-1, 0, 1f));
+      root.addView(bar, new LinearLayout.LayoutParams(-1, 0, row[0].equals("mc") ? 0.78f : 1f));
     }
     render();
   }
