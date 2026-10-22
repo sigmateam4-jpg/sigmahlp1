@@ -2,5 +2,5 @@ plugins { id 'com.android.application' }
 android {
  namespace 'com.calculatriceplus.app'
  compileSdk 35
- defaultConfig { applicationId 'com.calculatriceplus.app'; minSdk 26; targetSdk 28; versionCode 6; versionName '2.3' }
+ defaultConfig { applicationId 'com.calculatriceplus.app'; minSdk 26; targetSdk 28; versionCode 7; versionName '2.3.1' }
 }
