@@ -138,7 +138,8 @@ public class MainActivity extends Activity {
     screen.addView(topLine);
     pending = text("", 15, secondary());
     pending.setGravity(Gravity.RIGHT | Gravity.CENTER_VERTICAL);
-    pending.setSingleLine(true);\n    pending.setEllipsize(android.text.TextUtils.TruncateAt.START);
+    pending.setSingleLine(true);
+    pending.setEllipsize(android.text.TextUtils.TruncateAt.START);
     screen.addView(pending, new LinearLayout.LayoutParams(-1, dp(28)));
     display = text("0", 40, foreground());
     display.setGravity(Gravity.RIGHT | Gravity.CENTER_VERTICAL);
