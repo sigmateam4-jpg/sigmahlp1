@@ -15,7 +15,12 @@ public final class CalculatorEngine implements java.io.Serializable {
   /** Dernière opération validée par « = » : permet de répéter « = ». */
   private String lastOperator = null;
   private BigDecimal lastOperand = null;
+  private static final int MAX_HISTORY = 100;
   private final ArrayList<String> history = new ArrayList<>();
+  private void addHistory(String line) {
+    if (history.size() >= MAX_HISTORY) history.remove(0);
+    history.add(line);
+  }
 
   /** Affiche le texte saisi tel quel (les zéros finaux de « 1,0 » ou « 0,05 » sont conservés). */
   public String getDisplay() {
@@ -116,20 +121,20 @@ public final class CalculatorEngine implements java.io.Serializable {
         if(left==null || operator==null) {
           if(justEvaluated && lastOperator!=null) { // « = » répété : refait la dernière opération
             BigDecimal base=parse(entry), result=compute(base,lastOperand,lastOperator);
-            history.add(format(base)+" "+lastOperator+" "+format(lastOperand)+" = "+format(result));
+            addHistory(format(base)+" "+lastOperator+" "+format(lastOperand)+" = "+format(result));
             entry=raw(result);
           }
           return;
         }
         if(awaitingOperand)return;
         BigDecimal right=parse(entry), result=compute(left,right,operator);
-        history.add(format(left)+" "+operator+" "+format(right)+" = "+format(result));
+        addHistory(format(left)+" "+operator+" "+format(right)+" = "+format(result));
         lastOperator=operator;lastOperand=right;
         entry=raw(result);left=null;operator=null;awaitingOperand=false;justEvaluated=true;replaceEntry=false;
       } else if(Arrays.asList("+","−","×","÷").contains(key)) {
         if(left!=null && operator!=null && !awaitingOperand) {
           BigDecimal right=parse(entry), result=compute(left,right,operator);
-          history.add(format(left)+" "+operator+" "+format(right)+" = "+format(result));
+          addHistory(format(left)+" "+operator+" "+format(right)+" = "+format(result));
           entry=raw(result);
         }
         left=parse(entry);operator=key;awaitingOperand=true;justEvaluated=false;replaceEntry=false;
