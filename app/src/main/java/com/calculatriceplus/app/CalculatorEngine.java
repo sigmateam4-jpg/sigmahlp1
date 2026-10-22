@@ -4,7 +4,8 @@ import java.math.*;
 import java.util.*;
 
 /** Session-only calculator state. No storage of calculations or memory. */
-public final class CalculatorEngine {
+public final class CalculatorEngine implements java.io.Serializable {
+  private static final long serialVersionUID = 1L;
   private static final MathContext PRECISION = new MathContext(24, RoundingMode.HALF_UP);
   private String entry = "0", operator = null;
   private BigDecimal left = null, memory = BigDecimal.ZERO;
@@ -20,7 +21,7 @@ public final class CalculatorEngine {
   public String getDisplay() {
     if (error) return "Erreur";
     String plain = entry.replace("-", "");
-    if (plain.length() > 15) return compact(parse(entry));
+    if (justEvaluated && plain.length() > 15) return compact(parse(entry));
     return groupText(entry);
   }
   /** Résultat compact et lisible : ne modifie jamais la valeur interne BigDecimal. */
