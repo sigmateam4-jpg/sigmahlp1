@@ -10,6 +10,7 @@ on:
       - develop/calculatrice-plus-v2-2
       - develop/calculatrice-plus-v2-3
       - develop/calculatrice-plus-v2-3-1
+      - develop/calculatrice-plus-v2-3-2
 
 jobs:
   build:
