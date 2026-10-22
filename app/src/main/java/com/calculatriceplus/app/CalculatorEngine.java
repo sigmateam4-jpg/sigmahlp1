@@ -26,6 +26,8 @@ public final class CalculatorEngine {
   public List<String> getHistory() { return Collections.unmodifiableList(history); }
   public String getPending() { return left == null || operator == null ? "" : format(left) + " " + operator; }
   public BigDecimal getMemory() { return memory; }
+  public boolean hasMemory() { return memory.signum() != 0; }
+  public void clearHistory() { history.clear(); }
   public boolean isError() { return error; }
   public void clear() { entry="0"; operator=null; left=null; awaitingOperand=false; justEvaluated=false; error=false; replaceEntry=false; lastOperator=null; lastOperand=null; }
 
